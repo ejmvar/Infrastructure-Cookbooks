@@ -1,0 +1,10 @@
+= DESCRIPTION:
+
+Ensures that our mothership server has ssh access to all other machines
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

@@ -1,0 +1,141 @@
+#!/usr/bin/env ruby
+#
+# Check the age of the latest backups
+#
+
+require 'rubygems'
+require 'choice'
+
+class Fixnum
+  def minutes
+     self * 60
+  end
+
+  def minute
+     self.minutes
+  end
+
+  def hour
+    self.minutes * 60
+  end
+
+  def hours
+    self.hour
+  end
+
+  def days
+     self.hours * 24   # we store seconds in a day
+  end
+
+  def day
+     self.days
+  end
+
+  def months
+      self.days * 31
+  end
+
+  def month
+      self.months
+  end
+
+  def year
+    self.days * 365
+  end
+
+  def years
+    self.year
+  end
+end
+
+
+EXIT_OK = 0
+EXIT_WARNING = 1
+EXIT_CRITICAL = 2
+EXIT_UNKNOWN = 3
+
+Choice.options do
+  header ''
+  header 'Specific options:'
+
+  option :warning_missed do
+    short '-wm'
+    long '--warning-missed=VALUE'
+    desc 'Number of missed backups to cause warning'
+    cast Integer
+  end
+
+  option :critical_missed do
+    short '-cm'
+    long '--critical-missed=VALUE'
+    desc 'Number of missed backups to cause critical'
+    cast Integer
+  end
+
+  option :backup_path do
+    short '-p'
+    long '--backup_path=VALUE'
+    desc 'Path where backups live'
+    cast String
+  end
+end
+
+c = Choice.choices
+
+c[:warning_missed] ||= 1
+c[:critical_missed] ||= 2
+c[:backup_path] ||= '/home/<%=node[:deploy_user][:user]%>/Backup'
+
+results = []
+success_output = []
+warning_output = []
+critical_output = []
+
+<%if node[:backup][:jobs].nil? or node[:backup][:jobs].empty?%>
+  warning_output << "Warning: No backups configures"
+  results << :warning
+<%end%>
+
+<%node[:backup][:jobs].each do |name, config|%>
+  <%if config[:type] == 'sync'%>
+    # CHECK S3 SYNC
+    warning_output << "Warning: Sync Not Checked"
+    results << :warning
+  <%else%>
+    unless File.exists?("#{c[:backup_path]}/data/<%=name%>")
+      critical_output << "Critical: No backup directory for backup job '<%=name%>'"
+      results << :critical
+    else
+      unless File.exists?("#{c[:backup_path]}/data/<%=name%>/SCP.yml")
+        critical_output << "Critical: No backup data for backup job '<%=name%>'"
+        results << :critical
+      else
+        backup_data = `ls -S -t #{c[:backup_path]}/data/<%=name%>/SCP.yml`.first.strip
+        last_backup_modification_date = File.mtime(backup_data)
+        if last_backup_modification_date > Time.now - c[:warning_missed] * <%=config[:every]%>
+          success_output << "<%=name%> OK: Created at #{last_backup_modification_date}"
+          results << :ok
+        elsif last_backup_modification_date > Time.now - c[:critical_missed] * <%=config[:every]%>
+          warning_output << "Warning: Last backup of <%=name%>: #{last_backup_modification_date}"
+          results << :warning
+        else
+          critical_output << "Critical: Last backup of <%=name%>: #{last_backup_modification_date}"
+          results << :critical
+        end
+      end
+    end
+  <%end%>
+<%end%>
+
+if results.include?(:critical)
+  puts "CRITICAL: #{critical_output.join(' - ')}"
+  exit(EXIT_CRITICAL)
+elsif results.include?(:warning)
+  puts "WARNING: #{warning_output.join(' - ')}"
+  exit(EXIT_WARNING)
+elsif results.include?(:ok)
+  puts "OK: #{success_output.join(' - ')}"
+  exit(EXIT_OK)
+else
+  exit(EXIT_UNKNOWN)
+end

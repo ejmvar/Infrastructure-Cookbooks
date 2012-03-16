@@ -1,0 +1,14 @@
+= DESCRIPTION:
+Sets up a splunk
+
+The server recipe sets up a splunk server
+
+The default recipe sets up servers to forward their logs to the splunk
+server
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

@@ -1,0 +1,8 @@
+= Description:
+Sets up posfix as a service for sending email.
+
+Apply the default role to all machines that you wish to have send mail
+
+Apply the default role with attribute [:postfix][:mail_type] = 'master'
+to have all other machines with posfix install send mail through this
+mail relay.

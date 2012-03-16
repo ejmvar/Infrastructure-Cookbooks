@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/46/openldap-ppolicy-check-password/trunk
+END
+check_password.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/40/openldap-ppolicy-check-password/trunk/check_password.c
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/1/openldap-ppolicy-check-password/trunk/LICENSE
+END
+INSTALL
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/1/openldap-ppolicy-check-password/trunk/INSTALL
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/46/openldap-ppolicy-check-password/trunk/Makefile
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/40/openldap-ppolicy-check-password/trunk/README
+END

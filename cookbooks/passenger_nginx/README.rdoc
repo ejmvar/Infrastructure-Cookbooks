@@ -1,0 +1,9 @@
+= DESCRIPTION:
+Installs and configures passenger and nginx
+
+= REQUIREMENTS:
+
+= ATTRIBUTES: 
+
+= USAGE:
+

@@ -1,0 +1,62 @@
+nodes:
+- ec2 1:
+  - role[base] role[apt_proxy]
+  - -d ree -x ubuntu -E common -I ami-349b495d
+
+- ec2 1:
+  - role[base] role[gem_proxy] role[app_server]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[gem_server] role[app_server]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[ldap-server] role[ldap-ui]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[ldap-replica]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[ldap-password] role[app_server]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[nagios_server]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[splunk_server]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[git-server]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[mail_relay]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base] role[errbit] role[mongo_database_master] role[app_server] role[run_migrations]
+  - -d ree -x ubuntu -E common
+
+- ec2 1:
+  - role[base], role[mothership], role[database_master], role[app_server], role[run_migrations]
+  - -d ree -x ubuntu -E common
+
+# make all machines ldap clients, backup clients, apt clients,  splunk forwarders, and install nagios nrpe services
+# run on chef client and dns first to prevent errors of other vms connecting to chef and having temporary name resoluiton errors
+- run:
+  - roles:chef_server OR recipes:bind\\:\\:server
+  - sudo -i chef-client
+
+- run:
+  - role:ldap_server
+  - sudo -i chef-client
+
+- run:
+  - NOT (roles:chef_server OR role:ldap_server OR recipes:bind\\:\\:server)
+  - sudo -i chef-client

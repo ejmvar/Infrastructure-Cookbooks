@@ -1,0 +1,9 @@
+= DESCRIPTION:
+Sets up cron jobs to be run via schedule.rb file using whenever
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

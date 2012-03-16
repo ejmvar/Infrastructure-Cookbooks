@@ -1,0 +1,74 @@
+# Load dynamic backend modules
+dn: cn=module{0},cn=config
+objectClass: olcModuleList
+cn: module{0}
+olcModulePath: /usr/lib/ldap
+olcModuleLoad: {0}back_hdb
+<%unless node[:openldap][:server][:replica] %>
+olcModuleload: {1}syncprov
+<%end%>
+
+# Create directory database
+dn: olcDatabase={1}hdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcHdbConfig
+olcDatabase: {1}hdb
+olcDbDirectory: /var/lib/ldap
+olcSuffix: <%=node[:openldap][:server][:suffix]%>
+olcRootDN: cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>
+olcRootPW: <%=node[:openldap][:server][:hash_password]%>
+olcAccess: {0}to attrs=userPassword,shadowLastChange by dn="cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>" write by anonymous auth by self write by * none
+olcAccess: {1}to dn.base="" by * read
+olcAccess: {2}to * by dn="cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>" write by * read
+olcLastMod: TRUE
+olcDbCheckpoint: 512 30
+olcDbConfig: {0}set_cachesize 0 2097152 0
+olcDbConfig: {1}set_lk_max_objects 1500
+olcDbConfig: {2}set_lk_max_locks 1500
+olcDbConfig: {3}set_lk_max_lockers 1500
+olcDbIndex: uid pres,eq
+olcDbIndex: cn,sn,<%="accessKey," if node[:openldap][:server][:nova]%>mail pres,eq,approx,sub
+olcDbIndex: objectClass,entryCSN,entryUUID eq
+################################
+#        Modifications
+################################
+
+dn: cn=config
+changetype: modify
+
+dn: olcDatabase={-1}frontend,cn=config
+changetype: modify
+delete: olcAccess
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcRootDN
+olcRootDN: cn=admin,cn=config
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcRootPW
+olcRootPW: <%=node[:openldap][:server][:hash_password]%>
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+delete: olcAccess
+
+#SYNCING FOR REPLICATION
+dn: olcOverlay={0}syncprov
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: {0}syncprov
+olcSpCheckpoint: 100 10
+olcSpSessionlog: 100
+
+<% if node[:openldap][:server][:replica] && @ldap %>
+olcSyncUseSubentry: FALSE
+olcSyncrepl: rid=<%=node[:openldap][:server][:rid]%> provider=ldap://<%=@ldap[:ipaddress]%> bindmethod=simple timeout=0 net
+work-timeout=0 binddn="cn=<%=@ldap[:openldap][:server][:admin]%>,<%=@ldap[:openldap][:server][:suffix]%>" credentials="<%=@ldap[:openldap][:server][:hash_password]%>" keep
+alive=0:0:0 starttls=no filter="(objectClass=*)" searchbase="<%=@ldap[:openldap][:server][:suffix]%>"
+scope=sub attrs="*" schemachecking=off updatedn="cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>" type=refreshOnly interval=00:00:01:00 retry=undefined
+olcUpdateRef: ldap://<%=@ldap[:ipaddress]%>
+olcMirrorMode: FALSE
+olcMonitoring: FALSE
+<%end%>

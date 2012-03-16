@@ -1,0 +1,16 @@
+<%= @env %>:
+  host: <%= @ldap[:fqdn] %>
+  port: 389
+  admin_user: cn=<%= @ldap[:openldap][:server][:auth_user] %>,<%= @ldap[:openldap][:server][:suffix] %>
+  admin_password: <%= @ldap[:openldap][:server][:auth_password] %>
+  <% if @ldap_password_policies %>
+  base: ou=users,<%=@ldap[:openldap][:server][:suffix] %>
+  attribute: uid
+  ssl: !ruby/sym start_tls
+  policy_base: ou=<%= @ldap[:openldap][:server][:policy_tree] %>,<%= @ldap[:openldap][:server][:suffix] %>
+  default_password_policy: default
+  <% else %>
+  base: <%= @ldap[:openldap][:server][:suffix] %>
+  attribute: mail
+  ssl: start_tls
+  <%end%>

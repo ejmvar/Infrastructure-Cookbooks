@@ -1,0 +1,35 @@
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "<%=node[:dhcpd][:domain]%>" {
+type <%=node[:bind][:type]%>;
+file "/etc/bind/zones/<%=node[:bind][:type]%>/<%=node[:dhcpd][:domain]%>.db";
+  <%unless @slaves.empty? %>
+    allow-transfer { <%@slaves.each do |slave|%><%=slave[:ipaddress]%>; <%end%>};
+  <%end%>
+  <%unless @masters.empty?%>
+    masters { <%@masters.each do |master|%><%=master[:ipaddress]%>; <%end%> };
+    allow-transfer { <%@masters.each do |master|%><%=master[:ipaddress]%>; <%end%>};
+  <%end%>
+};
+
+<%@zones.each do |zone|%>
+zone "<%=zone.split('/').first.split('.')[0..2].reverse.join('.')%>.IN-ADDR.ARPA" {
+type <%=node[:bind][:type]%>;
+	notify no;
+  file "/etc/bind/zones/<%=node[:bind][:type]%>/<%=zone.split('/').first.split('.')[0..2].join('.')%>.db";
+  <%unless @slaves.empty? %>
+    allow-transfer { <%@slaves.each do |slave|%><%=slave[:ipaddress]%>; <%end%> };
+  <%end%>
+  <%unless @masters.empty? %>
+    masters { <%@masters.each do |master|%><%=master[:ipaddress]%>; <%end%> };
+    allow-transfer { <%@masters.each do |master|%><%=master[:ipaddress]%>; <%end%>};
+  <%end%>
+};
+<%end%>
+

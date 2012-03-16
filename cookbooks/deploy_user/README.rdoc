@@ -1,0 +1,11 @@
+= DESCRIPTION:
+
+Locks down the default deploy user on all our machines. It does so
+by giving the deploy user a random large password and then forgetting it.
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

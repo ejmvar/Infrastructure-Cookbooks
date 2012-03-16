@@ -1,0 +1,45 @@
+= DESCRIPTION:
+A set of recipes for deploying rails, or sinatra applications.
+
+This manages different responsibilites of running the application that
+may be split up onto different machines.
+
+= Responsibilities/Roles
+app_server: For serving pages and responding to request to the
+application
+
+database_master: A mysql database to act as the master database for the
+application
+
+mongo_database_master: A mongodb to act as the master database for the
+application
+
+utility_server: A server to run delayed jobs from an application
+
+= SETUP
+A role must be setup for any application that defines where to fetch the
+application from and attributes for the application.
+
+Roles may be split up however you like(eg an application and its db
+running on one server, or many server like multiple app servers, a utility server a
+database master, a database slave and a proxy server)
+
+These roles must be applied in a certain order in order for permissions
+to be setup correctly.
+
+1.
+The app_servers, utility_servers and database_slaves must be created with the application
+role but without the app_server, utility_server or database_slave roles run.  The
+app_server and database_slave roles must be added to the servers but not
+run on them yet (eg knife node runlist add FQDN_OF_SERVER app_server)
+
+2.
+The database_master must then be created with the database_master role
+
+3.
+Now running chef client on the app, utility, and database_slave servers
+will finish setting them up.
+
+4.
+Finally a server with the proxy role may be created to load balance
+between multiple app server

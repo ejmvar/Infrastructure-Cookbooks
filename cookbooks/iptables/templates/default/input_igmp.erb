@@ -1,0 +1,2 @@
+# input_igmp - Allow broadcast (dhcpclient!)
+-A INPUT -p 2 -j ACCEPT -m comment --comment "Allow IGMP protocol. Required for DHCP"

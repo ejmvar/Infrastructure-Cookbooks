@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# kinda_check_apt
+# Returns 0 when packages are available for upgrade
+# Returns 1 when critical packages are available for upgrade
+#
+# Author: Philippe Creux
+
+/usr/lib/nagios/plugins/check_apt;
+export err=$?;
+
+if (( $err == 1 )); then
+  exit 0;
+elif (( $err == 2 )); then
+  exit 1;
+else
+  exit $err;
+fi

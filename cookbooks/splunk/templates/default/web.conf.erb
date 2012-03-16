@@ -1,0 +1,8 @@
+[settings]
+httpport = <%=node[:splunk][:web][:port]%>
+<%if node[:splunk][:web][:ssl]%>
+  enableSplunkWebSSL = true
+  privKeyPath = <%=node[:certificates_dir]%>/<%=node[:splunk][:web][:url]%>.key
+  caCertPath = <%=node[:certificates_dir]%>/<%=node[:splunk][:web][:url]%>.fullcert
+<%end%>
+

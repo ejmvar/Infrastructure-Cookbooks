@@ -1,0 +1,14 @@
+$TTL    86400   ; TTL, seconds
+@	IN	SOA	<%=@nameservers.join(' ')%> (
+			2011090101	; Serial
+			7200		    ; Refresh, seconds
+			120		      ; Retry, seconds
+			2419200     ; Expire, seconds
+			604800      ; Minimum, seconds
+)
+<%@nameservers.each do |nameserver|%>
+  IN	NS	<%=nameserver%>
+<%end%>
+<%@config.each do |name, value|%>
+<%=value[:ip_address].split('.').last%>	IN	PTR	<%=name%>.<%=node[:dhcpd][:domain]%>.
+<%end%>

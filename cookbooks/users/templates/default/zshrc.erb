@@ -1,0 +1,17 @@
+# Load completions
+autoload compinit
+compinit
+
+setopt prompt_subst
+
+# let's load colors into our environment, then set them
+autoload colors zsh/terminfo
+colors
+
+# Load a default prompt
+PROMPT=$'\n%F{red}%n@`hostname -f` %F{cyan}%~%{$reset_color%}: '
+
+if [ -e ~/.zshrc-local ]
+then
+  source ~/.zshrc-local
+fi

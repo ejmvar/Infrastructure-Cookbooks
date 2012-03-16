@@ -1,0 +1,5 @@
+search <%= @domains.join(' ') %>
+domain <%= @domains.join(' ') %>
+<% @nameservers.each do |nameserver| -%>
+nameserver <%= nameserver %>
+<% end -%>

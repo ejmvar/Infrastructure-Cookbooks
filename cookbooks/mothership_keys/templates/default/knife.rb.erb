@@ -1,0 +1,25 @@
+# This is the knife config for the meta mothership server
+# that has access to chef servers on staging, demo and production 
+# environment.
+#
+# A new client with name 'mothership.prod.versapay.com' has to be created
+# manually on each chef servers. The resulting client.pem
+# have to be stored manually in # /home/deploy/.chef/{ENV}/client.pem
+# where {ENV} is stag, demo and prod.
+#
+# Once that's done running CHEF=stag knife node list
+# should run knife against the staging chef server.
+#
+# In mothership UI, you can define pipelines as follow:
+#   export CHEF=stag
+#   knife ssh 'role:eft3' 'sudo chef-client -V'
+#
+node_name         '<%= node.fqdn %>'
+log_level         :info
+log_location      STDOUT
+<% if Chef::Config.has_key?(:chef_server_url) -%>
+chef_server_url  "<%= Chef::Config[:chef_server_url] %>"
+<% else -%>
+chef_server_url  "<%= node["chef_client"]["server_url"] %>"
+<% end -%>
+

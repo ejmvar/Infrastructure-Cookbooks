@@ -1,0 +1,31 @@
+bash -c '
+mkdir -p /etc/chef
+
+# Create validation.pem
+(
+cat <<EOP
+ <%=IO.read('/home/deploy/.chef/validation.pem')%>
+EOP
+) > /etc/chef/validation.pem
+
+
+# Create /etc/chef/client.rb
+(
+cat <<'EOP'
+<%= config_content %>
+EOP
+) > /etc/chef/client.rb
+
+# Create /etc/chef/first-boot.json
+(
+cat <<'EOP'
+<%= { "run_list" => @run_list }.to_json %>
+EOP
+) > /etc/chef/first-boot.json
+
+. /etc/environment
+
+# Register to chef server!
+/opt/ruby-enterprise/bin/chef-client -j /etc/chef/first-boot.json  -E <%=bootstrap_environment%>
+'
+

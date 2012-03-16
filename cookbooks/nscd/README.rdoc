@@ -1,0 +1,9 @@
+= Description:
+Installs nscd which is used to make ldap work with ubuntu.
+
+Nscd has a tendency to fail so a cron job is in place to restart nscd
+
+If sudo as an ldap user fails with error
+sudo: setreuid(ROOT_UID, user_uid): Operation not permitted
+nscd must be restarted
+

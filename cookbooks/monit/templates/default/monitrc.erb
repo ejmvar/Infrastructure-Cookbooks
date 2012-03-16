@@ -1,0 +1,17 @@
+set daemon <%= @node[:monit][:poll_period] %>
+  with start delay <%= @node[:monit][:poll_start_delay] %>
+
+set logfile syslog facility log_daemon
+
+set eventqueue
+    basedir /var/monit  # set the base directory where events will be stored
+#    slots 1000          # optionaly limit the queue size
+
+set httpd port 3737
+<%if node[:monit][:ssl]%>
+ssl enable
+pemfile /etc/monit/ssl/monit.pem
+<%end%>
+allow <%=@node[:monit][:username]%>:"<%=@node[:monit][:password]%>"
+
+include /etc/monit/conf.d/*.monitrc

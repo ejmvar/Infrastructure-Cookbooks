@@ -1,0 +1,58 @@
+[default]
+# Force host to node's fqdn
+host = <%= node.fqdn %>
+
+# Monitor the world.
+[monitor:///var/log]
+blacklist = \.(gz|zip|\d+)$
+
+# Force source type to rails for rails logs
+[monitor:///data/*/shared/log/*log]
+sourcetype = rails
+
+# ghazel-daemon logs STDOUT in .output files
+[monitor:///data/*/shared/.../*output]
+
+# More complex configuration that I'd like to get to but can't
+# make it work. Only rails logs should have sourcetype 'rails'
+<%- rails_logs_names = %w{development staging demo production} %>
+<%- rails_logs_regexp = rails_logs_names.map { |l| "/#{l}\.log$" }.join('|') %>
+
+# Force source type to rails for rails logs
+#[monitor:///data/.../*log]
+#whitelist = <%= rails_logs_regexp %>
+#sourcetype = rails
+
+# Let splunk define the source type for non-rails logs
+#[monitor:///data/.../*log]
+#blacklist = <%= rails_logs_regexp %>
+#
+# Note: Adding
+#   followSymlink = false
+# would just avoid splunk from logging anything. Don't know why.
+#
+#   [monitor:///var/log] => Works!
+#   [monitor:///data/*/shared/log/*] => Works!
+#   [monitor:///data/*/shared/.../*log] => Works!
+#   [monitor:///data/*/shared/log] => Does NOT work.
+
+# Monitor /etc file intergrity
+# Find these events by searching  sourcetype="fs_notification" or source="fschangemonitor"
+[filter:blacklist:samba]
+regex1 = /etc/samba
+regex2 = /etc/samba/dhcp.conf
+
+[fschange:/etc]
+fullEvent = true
+filters = samba
+
+<% if node.run_list.roles.include? 'splunk_server' %>
+[SSL]
+rootCA = <%=node.splunk.install_path%>/etc/certs/cacert.pem
+serverCert = <%=node.splunk.install_path%>/etc/certs/<%=node.splunk.web.url%>_splunk.pem
+password = <%= node.splunk.forwarder.ssl_password %>
+requireClientCert = false
+
+[splunktcp-ssl:<%=node.splunk.listener.port%>]
+compressed = true
+<%end%>

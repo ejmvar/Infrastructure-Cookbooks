@@ -1,0 +1,107 @@
+# slapd.conf - Configuration file for LDAP SLAPD
+##########
+# Basics #
+##########
+include /etc/ldap/schema/core.schema
+include /etc/ldap/schema/cosine.schema
+include /etc/ldap/schema/inetorgperson.schema
+include /etc/ldap/schema/nis.schema
+include /etc/ldap/schema/misc.schema
+include /etc/ldap/schema/openssh-lpk_openldap.schema
+include /etc/ldap/schema/ppolicy.schema
+
+pidfile /var/run/slapd/slapd.pid
+argsfile /var/run/slapd/slapd.args
+loglevel <%= node[:openldap][:server][:log_level]%>
+modulepath /usr/lib/ldap
+moduleload back_hdb
+<%unless node[:openldap][:server][:replica]%>
+moduleload syncprov
+<%end%>
+moduleload ppolicy.la
+moduleload memberof.la
+
+# Security - TLS section
+TLSCACertificateFile <%=node['certificate-authority']['ca_cert']%>
+TLSCertificateFile /etc/ldap/ssl/<%=node[:fqdn]%>.crt
+TLSCertificateKeyFile /etc/ldap/ssl/<%=node[:fqdn]%>.key
+#TLSCipherSuite NORMAL
+# the following directive is the default but
+# is explicitly included for visibility reasons
+TLSVerifyClient allow
+
+# security - other directives
+# prevents anonymous access to
+# any connection
+disallow bind_anon
+# forces a bind operation before DIT access
+require bind
+# Use of reads on ldaps only port forces use
+# of TLS/SSL but not a minimum value
+# this directive forces a minimum value
+security simple_bind=128
+
+serverID <%=node[:openldap][:server][:server_id]%>
+
+database hdb
+suffix "<%==node[:openldap][:server][:suffix]%>"
+rootdn "cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>"
+lastmod on
+directory /var/lib/ldap
+index uid pres,eq
+index cn,sn,mail pres,eq,approx,sub
+index objectClass,entryCSN,entryUUID,memberOf eq
+
+<%unless node[:openldap][:server][:replica]%>
+overlay syncprov
+syncprov-checkpoint 100 10
+syncprov-sessionlog 100
+<%end%>
+<%if node[:openldap][:server][:replica] && @ldap%>
+syncrepl rid=<%=node[:openldap][:server][:rid]%>
+        provider=ldap://<%=@ldap[:fqdn]%>
+        starttls=yes
+        <% if @ldap[:different_ca_cert]%>
+        tls_cacert=/usr/share/ca-certificates/<%=@ldap[:fqdn]%>.ca.crt
+        <%else%>
+        tls_cacert=/usr/share/ca-certificates/ca.crt
+        <%end%>
+        type=refreshAndPersist
+        interval=00:00:01:00
+        searchbase="<%=@ldap[:openldap][:server][:suffix]%>"
+        filter="(objectClass=*)"
+        scope=sub
+        attrs="*"
+        schemachecking=off
+        bindmethod=simple
+        binddn="cn=<%=@ldap[:openldap][:server][:sync_user]%>,<%=@ldap[:openldap][:server][:suffix]%>"
+        credentials=<%=@ldap[:openldap][:server][:sync_password]%>
+<%end%>
+
+overlay memberof
+
+overlay ppolicy
+ppolicy_default "cn=default,ou=<%=node[:openldap][:server][:policy_tree]%>,<%=node[:openldap][:server][:suffix]%>"
+
+########
+# ACLS #
+########
+access to attrs=userPassword,shadowLastChange
+       by dn="cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>" write
+       <% node[:openldap][:server][:ldap_admin_groups].each do |group| %>
+       by group="cn=<%=group%><%=node[:openldap][:server][:suffix]%>" write
+       <% end %>
+       by dn="cn=<%=node[:openldap][:server][:sync_user]%>,<%=node[:openldap][:server][:suffix]%>" read
+       by dn="cn=<%=node[:openldap][:server][:auth_user]%>,<%=node[:openldap][:server][:suffix]%>" auth
+       by anonymous auth
+       by self write
+       by * none
+access to *
+       by dn="cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>" write
+       <% node[:openldap][:server][:ldap_admin_groups].each do |group| %>
+       by group="cn=<%=group%><%=node[:openldap][:server][:suffix]%>" write
+       <% end %>
+       by dn="cn=<%=node[:openldap][:server][:sync_user]%>,<%=node[:openldap][:server][:suffix]%>" read
+       by dn="cn=<%=node[:openldap][:server][:auth_user]%>,<%=node[:openldap][:server][:suffix]%>" read
+       by self write
+       by * none

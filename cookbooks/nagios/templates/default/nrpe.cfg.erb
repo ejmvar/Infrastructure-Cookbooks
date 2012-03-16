@@ -1,0 +1,76 @@
+pid_file=/var/run/nagios/nrpe.pid
+server_port=5666
+nrpe_user=nagios
+nrpe_group=nagios
+dont_blame_nrpe=0
+debug=0
+command_timeout=60
+
+include_dir=/etc/nagios/nrpe.d/
+
+allowed_hosts=<%= @mon_host.join(',') %>
+
+command[check_users]=/usr/lib/nagios/plugins/check_users -w 20 -c 30
+command[check_load]=/usr/lib/nagios/plugins/check_load -w <%= node[:nagios][:checks][:load][:warning] %> -c <%= node[:nagios][:checks][:load][:critical] %>
+command[check_all_disks]=/usr/lib/nagios/plugins/check_disk -w 8% -c 5% -A -x /dev/shm -X nfs -i /boot
+command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 500 -c 800
+command[check_swap]=/usr/lib/nagios/plugins/check_swap -w '50%' -c '25%'
+command[check_mem]=/usr/lib/nagios/plugins/check_mem.sh -w <%= node[:nagios][:checks][:memory][:warning] %> -c <%= node[:nagios][:checks][:memory][:critical] %> -p
+command[check_chef_client]=/usr/lib/nagios/plugins/check_procs -w 1:2 -c 1:2 -C chef-client
+command[check_smtp]=/usr/lib/nagios/plugins/check_smtp -H <%= node[:nagios][:checks][:smtp_host] %>
+command[check_nginx]=/usr/lib/nagios/plugins/check_procs -w 2:3 -c 1:5 -C nginx
+command[check_sphinx]=/usr/lib/nagios/plugins/check_procs -c 1:1 -C searchd
+command[check_monit]=/usr/lib/nagios/plugins/check_monit.py -H '<%= node["fqdn"] %>' -p 3737 -u <%=node[:monit][:username]%> -P '<%=node[:monit][:password]%>' -s
+<%- if node[:mysql] %>
+command[check_mysql_server]=/usr/lib/nagios/plugins/check_mysql -H localhost -u debian-sys-maint -p <%= node[:mysql][:server_debian_password] %>
+<%- end %>
+<%- if node[:mysql] && node[:mysql][:server_root_password] && node[:rails_apps] && node[:wordpress] %>
+command[check_mysql_slave]=/usr/lib/nagios/plugins/check-mysql-slave.pl --host=localhost --user=root --password=<%= node.mysql.server_root_password %> --database=<%= "#{node.rails_apps.first}" %>
+<%- elsif node[:mysql] && node[:mysql][:server_root_password] && node[:rails_apps]  %>
+command[check_mysql_slave]=/usr/lib/nagios/plugins/check-mysql-slave.pl --host=localhost --user=root --password=<%= node.mysql.server_root_password %> --database=<%= "#{node.rails_apps.first}_#{node.rails_app.environment}" %>
+<%- end %>
+command[check_https_sendgrid]=/usr/lib/nagios/plugins/check_http -t 60 -H sendgrid.com -S
+command[check_smtp]=/usr/lib/nagios/plugins/check_smtp -H localhost
+command[check_mailq]=/usr/lib/nagios/plugins/check_mailq -t 60 -w 5 -c 20 -M postfix
+command[check_http_localhost]=/usr/lib/nagios/plugins/check_http -t 60 -H localhost
+command[check_https_localhost]=/usr/lib/nagios/plugins/check_http -t 60 -H localhost -S
+#DNS
+command[check_internal_dns]=/usr/lib/nagios/plugins/check_dns -H <%= @chef_server.fqdn %> -a <%= @chef_server.ipaddress%>
+command[check_external_dns]=/usr/lib/nagios/plugins/check_dns -H <%= node[:nagios][:external_dns_query] %>
+
+#DNS
+#command[check_internal_dns_primary]=/usr/lib/nagios/plugins/check_dns -H <%= @chef_server.fqdn %> -a <%= @chef_server.ipaddress%>
+#command[check_external_dns_primary]=/usr/lib/nagios/plugins/check_dns -H <%= node[:nagios][:external_dns_query] %>
+
+#DNS
+#command[check_internal_dns_secondary]=/usr/lib/nagios/plugins/check_dns -H <%= @chef_server.fqdn %> -a <%= @chef_server.ipaddress%>
+#command[check_external_dns_secondary]=/usr/lib/nagios/plugins/check_dns -H <%= node[:nagios][:external_dns_query] %>
+
+# TD ftp ip is: '142.205.232.141'
+command[check_ftp_td]=/usr/lib/nagios/plugins/check_tcp -t 60 -H 142.205.232.141 -p 2022
+command[check_apt]=/usr/lib/nagios/plugins/kinda_check_apt
+command[check_https_chef]=/usr/lib/nagios/plugins/check_http -t 60 -H <%= @chef_server.fqdn%> -S
+command[check_ntp_time]=/usr/lib/nagios/plugins/check_ntp_time -H <%= node[:ntp][:servers].first %>
+<% if @ldap %>
+command[check_ldap]=/usr/lib/nagios/plugins/check_ldap -H <%= @ldap.fqdn %> -t 60 -T -3 -b "<%= @ldap[:openldap][:server][:suffix] %>" -D "cn=<%= @ldap[:openldap][:server][:auth_user]%>,<%=@ldap[:openldap][:server][:suffix]%>" -P "<%= @ldap[:openldap][:server][:auth_password]%>"
+<% end %>
+<% if @splunk_server %>
+command[check_tcp_splunk]=/usr/lib/nagios/plugins/check_tcp -t 60 -H <%= @splunk_server.fqdn %> -p <%= node.splunk.listener.port %>
+<% end %>
+<% if @git_server %>
+command[check_git_connection]=/usr/lib/nagios/plugins/check_tcp -t 60 -H <%= @git_server.fqdn %> -p 22
+<% end %>
+<% if @errbit_server %>
+command[check_https_errbit]=/usr/lib/nagios/plugins/check_http -t 60 -H <%= @errbit_server.fqdn %> -S
+<% end %>
+command[check_mysql_backups]=/opt/ruby-enterprise/bin/ruby /usr/lib/nagios/plugins/check_mysql_backups.rb
+command[check_mysql_nightly_backups]=/opt/ruby-enterprise/bin/ruby /usr/lib/nagios/plugins/check_mysql_backups.rb --warning-age=1440 --critical-age=2880
+command[check_backups]=<%=node[:languages][:ruby][:bin_dir]%>/ruby /usr/lib/nagios/plugins/check_backups.rb --warning-missed=1 --critical-missed=2
+command[check_received_backups]=<%=node[:languages][:ruby][:bin_dir]%>/ruby /usr/lib/nagios/plugins/check_received_backups.rb --warning-missed=1 --critical-missed=2
+#command[check_unicorn]=/usr/lib/nagios/plugins/check_procs -c 4:8 -C unicorn_rails
+#
+# memcached checks require cpan modules, "Cache::Memcached" and "Nagios::Plugins::Memcached"
+#command[check_memcached_response]=/usr/local/bin/check_memcached -H <%= node[:ipaddress] %> -w 3 -c 5
+#command[check_memcached_size]=/usr/local/bin/check_memcached -H <%= node[:ipaddress] %> --size-warning 60 --size-critical 80
+#command[check_memcached_hit]=/usr/local/bin/check_memcached -H <%= node[:ipaddress] %> --hit-warning 40 --hit-critical 20

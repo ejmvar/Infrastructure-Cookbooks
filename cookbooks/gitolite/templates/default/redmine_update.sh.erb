@@ -1,0 +1,3 @@
+#!/bin/sh
+
+curl --cacert /usr/share/ca-certificates/ca.crt "https://<%=@redmine[:fqdn]%>/sys/fetch_changesets?key=<%=node[:gitolite][:redmin_repo_api_key]%>"

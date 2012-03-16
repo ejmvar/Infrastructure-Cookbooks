@@ -1,0 +1,9 @@
+check process <%= @name %>
+  with pidfile <%= @pid_file %>
+  start program = "/bin/bash -l -c 'source /etc/environment && <%= @executable.gsub("'", "\\'") %> start &>> /var/log/monit/<%= @name %>.log'"
+    as uid <%= @user %> and gid <%= @user %>
+  stop program = "/bin/bash -l -c 'source /etc/environment && <%= @executable.gsub("'", "\\'") %> stop &>> /var/log/monit/<%= @name %>.log'"
+    as uid <%= @user %> and gid <%= @user %>
+<%- if @group %>
+  group <%= @group %>
+<%- end %>

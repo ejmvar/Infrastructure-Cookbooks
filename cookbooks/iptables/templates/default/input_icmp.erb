@@ -1,0 +1,6 @@
+# input_icmp - Allow a subset of ICMP
+-A INPUT -p icmp --icmp-type destination-unreachable -j ACCEPT -m comment --comment "icmp: allow Destination Unreachable" 
+-A INPUT -p icmp --icmp-type time-exceeded           -j ACCEPT -m comment --comment "icmp: allow Time Exceeded"
+-A INPUT -p icmp --icmp-type echo-reply              -j ACCEPT -m comment --comment "icmp: allow Echo Reply"
+-A INPUT -p icmp --icmp-type echo-request            -j ACCEPT -m comment --comment "icmp: allow Echo Request"
+

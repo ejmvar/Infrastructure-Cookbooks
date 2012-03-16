@@ -1,0 +1,32 @@
+define contact {
+  contact_name                    root
+  alias                           Root
+  service_notification_period     24x7
+  host_notification_period        24x7
+  service_notification_options    u,c,r
+  host_notification_options       d,r
+  service_notification_commands   service-notify-by-email, service-notify-by-sms
+  host_notification_commands      host-notify-by-email, host-notify-by-sms
+  email                           root@localhost
+}
+
+define contactgroup {
+  contactgroup_name admins
+  alias             Nagios Administrators
+  members           <%= @contacts.collect{|c| c['id'] }.join(',') %>
+}
+
+define contactgroup {
+  contactgroup_name admins-sms
+  alias             Sysadmin SMS
+  members           <%= @contacts.collect{|c| c['id'] }.join(',') %>
+}
+
+<% @contacts.each do |a| -%>
+define contact {
+  use          default-contact
+  contact_name <%= a['id'] %>
+  email        <%= a['email'] %>
+  pager        <%= a['cell'] %>
+}
+<% end -%>

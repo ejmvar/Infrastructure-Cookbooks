@@ -1,0 +1,19 @@
+--- 
+:bulk_threshold: 1000
+:verbose: true
+:sources: 
+<%@gem_servers.each do |gem_server|%>
+- https://<%=gem_server.fqdn%>
+<%end%>
+<%@gem_proxies.each do |gem_server|%>
+- https://<%=gem_server.fqdn%>
+<%end%>
+<%if @gem_proxies.empty?%>
+  <%node[:gem_server][:sources].each do |source|%>
+- <%=source%>
+  <%end%>
+<%end%>
+:update_sources: true
+:backtrace: false
+:benchmark: false
+

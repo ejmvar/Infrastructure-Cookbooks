@@ -1,0 +1,9 @@
+= DESCRIPTION:
+Sets up nginx as a load balancing proxy between an applications
+app_servers.
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

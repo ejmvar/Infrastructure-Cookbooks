@@ -1,0 +1,30 @@
+[Backdoor User Login]
+search = session opened for user <%=node[:backdoor_user][:username]%>
+userid = <%=node[:splunk][:username]%>
+enableSched = 1
+cron_schedule = */5 * * * *
+counttype = number of events
+relation = rises by 1
+action.email = 0
+action.email.to = <%=node[:splunk][:alert_emails].join(', ')%>
+alert.track = true
+alert.severity = 5
+displayview = flashtimeline
+action.script = 1
+action.script.filename = redmine_alert.rb
+
+[Possible Credit Card Number]
+search = * | regex _raw="(?ms)(.*)\b(?:4[0-9]{8}(?:[0-9]{3})?|5[1-5][0-9]{10}|6(?:011|5[0-9]{2})[0-9]{8}|3[47][0-9]{9}|3(?:0[0-5]|[68][0-9])[0-9]{7}|(?:2131|1800|35\d{3})\d{7})(\d{4}\b.*)"
+userid = <%=node[:splunk][:username]%>
+enableSched = 1
+cron_schedule = 0 */3 * * *
+dispatch.earliest_time = -4h
+counttype = number of events
+relation = greater than 0
+action.email = 0
+action.email.to = <%=node[:splunk][:alert_emails].join(', ')%>
+alert.track = true
+alert.severity = 5
+displayview = flashtimeline
+action.script = 1
+action.script.filename = redmine_alert.rb

@@ -1,0 +1,18 @@
+<% @nodes.each do |n| -%>
+  <% if n[:nginx] && n[:nginx][:ssl_only] && n.roles.include?('proxy')%>
+define service{
+  service_description http
+  host_name <%=n.fqdn%>
+  check_command !check_http_deny_ok
+  use default-service
+}
+
+define service{
+  service_description http_status
+  host_name <%=n.fqdn%>
+  check_command !check_http_deny_ok
+  use default-service
+}
+
+  <% end -%>
+<% end -%>

@@ -1,0 +1,3 @@
+# <%= "#{@name} - #{@comment}" %>
+<%- port_flag = case @chain; when 'INPUT' then '--dport'; when 'OUTPUT' then '--sport'; end %>
+-A <%= @chain %> -j ACCEPT -p <%= @protocol %> <%= "-s #{@source}" if @source %> <%= "-d #{@destination}" if @destination %> <%= "--dport #{@dport}" if @dport %> <%= "--sport #{@sport}" if @sport %> -m comment --comment "<%= @comment %>"

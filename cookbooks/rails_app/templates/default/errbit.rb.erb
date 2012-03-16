@@ -1,0 +1,6 @@
+<%= @notifier %>.configure do |config|
+  config.api_key     = '<%=@api_key%>'
+  config.host        = '<%=@errbit_server.fqdn%>'
+  config.port        = 443
+  config.secure      = config.port == 443
+end

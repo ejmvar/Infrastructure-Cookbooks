@@ -1,0 +1,15 @@
+[tcpout]
+defaultGroup = <%=@splunk_servers.first.splunk.web.url%>_<%=@splunk_servers.first.splunk.listener.port%>
+disabled = false
+compressed = true
+
+<%@splunk_servers.each do |splunk_server|%>
+[tcpout:<%=splunk_server.splunk.web.url%>_<%=splunk_server.splunk.listener.port%>]
+server = <%=splunk_server.splunk.web.url%>:<%=splunk_server.splunk.listener.port%>
+
+[tcpout-server://<%=splunk_server.splunk.web.url%>:<%=splunk_server.splunk.listener.port%>]
+sslRootCAPath = <%=node.splunk.forwarder.install_path%>/etc/certs/cacert.pem
+sslCertPath = <%=node.splunk.forwarder.install_path%>/etc/certs/<%=splunk_server.splunk.web.url%>_splunk.pem
+sslPassword = <%= splunk_server.splunk.forwarder.ssl_password %>
+sslVerifyServerCert = false
+<%end%>

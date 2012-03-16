@@ -1,0 +1,22 @@
+#!/opt/ruby-enterprise/bin/ruby
+require 'rubygems'
+require 'active_resource'
+
+class Issue < ActiveResource::Base
+  self.site = 'https://<%=@redmine.fqdn%>'
+  self.user = '<%=node[:configuration_manager][:redmine_api_key]%>'
+  self.password = ''
+end
+
+issue = Issue.new(
+  :subject => ARGV[0],
+  :description => "Git Diff: \n #{ARGV[1]}",
+  :project_id => '<%=node[:configuration_manager][:redmine_project]%>',
+  :assigned_to_id => <%=node[:configuration_manager][:redmine_user_id]%>
+)
+if issue.save
+  puts issue.id
+else
+  puts issue.errors.full_messages
+end
+

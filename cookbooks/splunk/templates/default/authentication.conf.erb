@@ -1,0 +1,22 @@
+[authentication]
+authType = LDAP
+authSettings = ldaphost
+
+[ldaphost]
+host = <%=@ldap[:fqdn]%>
+port = 636
+SSLEnabled = 1
+bindDN = cn=<%=@ldap[:openldap][:server][:auth_user]%>,<%=@ldap[:openldap][:server][:suffix]%>
+bindDNpassword = <%=@ldap[:openldap][:server][:auth_password]%>
+groupBaseDN = ou=<%=@ldap[:openldap][:server][:user_group_tree]%>,<%=@ldap[:openldap][:server][:suffix]%>
+groupBaseFilter = (objectclass=*)
+groupMappingAttribute = dn
+groupMemberAttribute = member
+groupNameAttribute = cn
+realNameAttribute = displayName
+userBaseDN = ou=Users,<%=@ldap[:openldap][:server][:suffix]%>
+userBaseFilter = (objectclass=*)
+userNameAttribute = uid
+
+[roleMap]
+admin = <%=node[:splunk][:ldap][:admin_roles].join(';')%>

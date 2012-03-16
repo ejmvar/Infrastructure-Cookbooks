@@ -1,0 +1,18 @@
+= DESCRIPTION:
+
+Sets up a dns via bind.  The default recipe sets up a machine as a bind
+client.  The bind::server recipe sets up a macine to function as a bind
+server.
+
+The bind server role must also serve as a dhcp server and zones are
+defined via the dhcpd[:zones] attribute(see roles/dhcp-server)
+
+Bind slaves are defined by being assigned the role bind::server with the
+attribute node[:bind][:type] = 'slave'
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

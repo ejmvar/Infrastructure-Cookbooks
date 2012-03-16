@@ -1,0 +1,28 @@
+= DESCRIPTION:
+Sets up a backups.
+
+The backup_server recipe sets up a server as a backup server to which
+the backups are written.  These backups are also synced with s3.
+
+The default recipe sets up backups to be made to the backup server using
+the backup gem(https://github.com/meskyanichi/backup)
+
+Recipes using the default recipe must also specify a backup timing and
+what to backup.  The recipes for bind, mysql, rails app, mongo, and ldap
+will make backups if a backup interval is specifed.
+
+example from roles/ldap-replica.rb
+default_attributes(
+  "openldap" => {
+    "backups" => [
+      {:every => "1.hour", :keep => 48, :at => 20 }
+    ]  
+  }
+)
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

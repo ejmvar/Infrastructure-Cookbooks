@@ -1,0 +1,23 @@
+= DESCRIPTION:
+
+Provides SSH capabilities:
+  * Key generation - store pub key in node
+  * Tunnels through init.d start stop scripts
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+
+ssh_tunnel "mysql-tunnel" do
+  port 4406
+  host 'other-host.com'
+  host_port 3306
+  user 'deploy'
+end
+
+This will create an init.d script to start and stop a service named "mysql-tunnel". The
+generated ssh tunnel will create a local port forwarder from 4406 to 3306 of other-host.com.
+
+It is your job to ensure that the servers have ssh access to each othem.

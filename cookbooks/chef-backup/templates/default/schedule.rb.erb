@@ -1,0 +1,7 @@
+set :output, "#{path}/log/cron.log"
+
+<%node[:backup][:jobs].each do |name, config| %>
+  every <%=config[:every]%><%=", :at => #{config[:at]}" if config.include?('at') && config[:at]%> do
+    command "<%="#{config[:command]} && " if config.include?('command')%><%="sudo -i " if config.include?('use_sudo') && config[:use_sudo]%><%=node.languages.ruby.bin_dir%>/backup perform --trigger <%=name%> --config-file /home/<%=node[:deploy_user][:user]%>/Backup/config.rb<%=" && #{config[:post_command]}" if config.include?('post_command')%>"
+ end
+<%end%>

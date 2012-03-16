@@ -1,0 +1,173 @@
+#!/opt/ruby-enterprise/bin/ruby
+#
+# An example hook script for the "post-receive" event.
+#
+# The "post-receive" script is run after receive-pack has accepted a pack
+# and the repository has been updated.  It is passed arguments in through
+# stdin in the form
+#  <oldrev> <newrev> <refname>
+# For example:
+#  aa453216d1b3e49e7f6f98441fa56946ddcd6a20 68f7abf4e6f922807889f52bc043ecd31b79f814 refs/heads/master
+#
+# see contrib/hooks/ for a sample, or uncomment the next line and
+# rename the file to "post-receive".
+
+#. /usr/share/doc/git-core/contrib/hooks/post-receive-email
+
+require 'rubygems'
+require 'json'
+require 'httparty'
+
+<% if @jenkins_server && node[:gitolite][:update_jenkins] %>
+argv = STDIN.read.split(" ")
+class Hudhub
+  def self.process_git_hook(ref, commit)
+    Hudhub.new(ref, commit).process
+  end
+
+  def process 
+    repo_config = "#{ENV['GL_REPO_BASE_ABS']}/#{ENV['GL_REPO']}.git/config"
+    jobs = `git config -f #{repo_config} --get hooks.jobs`
+    jobs = jobs.split(" ")
+    puts "Managing ci jobs #{jobs.join(', ')}"
+    jobs.each do |base_job_name|
+      if branch_deleted?
+	Job.delete!(base_job_name, branch)
+      else
+      	Job.find_or_create_copy(base_job_name, branch).run!
+      end
+    end
+  end
+
+  def branch
+    @branch ||= @ref.split("refs/heads/").last
+  end
+
+  def branch_deleted?
+    @commit == "0000000000000000000000000000000000000000"
+  end
+
+  protected
+
+  def initialize(ref, commit)
+    @ref = ref
+    @commit = commit
+  end
+end
+
+class Hudhub
+  class Job
+    class Http
+      include HTTParty
+
+      base_uri "https://<%=@jenkins_server[:fqdn]%>"
+      #basic_auth(Hudhub.config.username, Hudhub.config.password) if Hudhub.config.username
+      headers 'Content-type' => 'text/xml'
+      # I get timeout errors on heroku but not on local env. Is that because of REE-1.8.7 ?
+      # Workaround: Set the timeout to 10 seconds and rescue timeout errors.
+      default_timeout 8
+    end
+
+    def self.find_or_create_copy(base_name, branch)
+      job_name = name_for_branch(base_name, branch)
+
+      if job = Job.find(job_name)
+        return job
+      end
+
+      base_job = Job.find(base_name)
+      raise "Base job #{base_name} does not exists!" unless base_job
+
+      Job.copy!(base_job, branch)
+    end
+
+    def self.find(job_name)
+      url = "/job/#{job_name}/config.xml"
+      response = Http.get(url)
+      case response.code
+      when 200
+        Job.new(job_name, response.response.body)
+      when 404
+        nil
+      when 401
+        raise AuthenticationFailed
+      else
+        raise response.response
+      end
+    end
+
+    # Creates a new job using the configuration of the :based_job for the given :branch
+    def self.copy!(base_job, branch)
+      job = base_job.clone
+      job.update_branch!(branch)
+
+      url = "/createItem?name=#{job.name}"
+      response = Http.post(url, :body => job.data)
+
+      unless response.code == 200
+        raise responseponse.response
+      end
+
+      job
+    end
+
+    def self.delete!(base_name, branch)
+      job_name = name_for_branch(base_name, branch)
+      url = "/job/#{job_name}/doDelete"
+      Http.post(url)
+    end
+
+    # Substitute master by the branch name.
+    # If master is not part of the base_job_name we append the branch name.
+    def self.name_for_branch(base_name, branch)
+      if base_name["master"]
+        base_name.gsub("master", branch)
+      else
+        "#{base_name}-#{branch}"
+      end
+    end
+
+    attr_accessor :name, :data
+
+    def run!
+      url = "/job/#{name}/build"
+
+      begin
+        response = Http.get(url)
+        case response.code
+        when 200
+          true
+        else
+          raise response.response
+        end
+      rescue Timeout::Error
+        return true
+      end
+    end
+
+    # Update the name and data for the given branch name
+    def update_branch!(branch)
+      self.name = Job.name_for_branch(self.name, branch)
+      self.data.gsub!(/<name>[^<]+/, "<name>#{branch}")
+
+      self
+    end
+
+    protected
+
+    def initialize(name, plain_xml)
+      @name = name
+      @data = plain_xml
+    end
+
+  end # class Job
+end # class Hudhub
+Hudhub.process_git_hook(argv[2], argv[1])
+
+<%end%>
+
+<%if @redmine && node[:gitolite][:update_redmine] && node[:gitolite][:redmine_repo_api_key]%>
+puts "updating redmine changesets"
+system '/home/git/.gitolite/hooks/common/post-receive.update_redmine_changesets' 
+<%end%>
+system '/home/git/.gitolite/hooks/common/post-receive.mirrorpush' 

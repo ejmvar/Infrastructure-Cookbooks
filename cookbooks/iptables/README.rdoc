@@ -1,0 +1,11 @@
+= DESCRIPTION:
+
+Sets up iptables and installs a base iptable.
+
+if node[:iptables][:reject_input], and node[:iptables][:reject_output]
+  are set to true and the activate recipe and default recipe are
+  applied a white label policy is in place where only
+  connections specified in recipes will be allowed
+
+Activate is a separate recipe to allow iptables to be defined and
+then activated at a later time(once all the rules are defined)

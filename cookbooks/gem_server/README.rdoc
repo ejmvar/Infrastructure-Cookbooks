@@ -1,0 +1,12 @@
+= DESCRIPTION:
+The default recipe sets up servers to be clients of any existing gem or
+gem proxy servers.
+
+The server recipe calls index on the gemserver to prevent errors caused
+by the gemserver being empty.
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

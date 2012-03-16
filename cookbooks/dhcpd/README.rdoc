@@ -1,0 +1,12 @@
+= DESCRIPTION:
+Sets up a dhcp server to provide ip addresses and hostnames to new
+machines.
+
+Closely linked with the bind recipe which provides dns using the same
+hash of inputs that assigns hostnames and ip address via dhcp
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

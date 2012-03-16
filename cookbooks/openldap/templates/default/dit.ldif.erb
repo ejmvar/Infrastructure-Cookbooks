@@ -1,0 +1,150 @@
+<%domains = node[:openldap][:server][:suffix].split(/,?dc=/) - [""]%>
+# Tree root
+
+dn: <%=node[:openldap][:server][:suffix]%>
+objectClass: dcObject
+objectClass: organization
+o: <%=domains.join('.')%>
+dc: <%=domains.first%>
+description: Tree root
+
+# Populating
+dn: cn=<%=node[:openldap][:server][:admin]%>,<%=node[:openldap][:server][:suffix]%>
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+objectClass: top
+cn: cn=<%=node[:openldap][:server][:admin]%>
+userPassword: <%=node[:openldap][:server][:admin_password]%>
+description: LDAP administrator
+pwdPolicySubentry: cn=invalid,ou=<%=node[:openldap][:server][:policy_tree]%>,<%=node[:openldap][:server][:suffix]%>
+
+<%unless node[:openldap][:server][:replica]%>
+# Special Account for Authentication:
+dn: cn=<%=node[:openldap][:server][:auth_user]%>,<%=node[:openldap][:server][:suffix]%>
+cn: <%=node[:openldap][:server][:auth_user]%>
+description: Special account for authenticating users
+userPassword: <%=node[:openldap][:server][:auth_password]%>
+objectClass: top
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+pwdPolicySubentry: cn=invalid,ou=<%=node[:openldap][:server][:policy_tree]%>,<%=node[:openldap][:server][:suffix]%>
+
+dn: cn=<%=node[:openldap][:server][:sync_user]%>,<%=node[:openldap][:server][:suffix]%>
+cn: <%=node[:openldap][:server][:sync_user]%>
+description: Special account for replicating the ldap server
+userPassword: <%=node[:openldap][:server][:sync_password]%>
+objectClass: top
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+pwdPolicySubentry: cn=invalid,ou=<%=node[:openldap][:server][:policy_tree]%>,<%=node[:openldap][:server][:suffix]%>
+
+dn: ou=Users,<%=node[:openldap][:server][:suffix]%>
+ou: Users
+objectClass: organizationalUnit
+objectClass: top
+
+dn: ou=Groups,<%=node[:openldap][:server][:suffix]%>
+ou: Groups
+objectClass: organizationalUnit
+objectClass: top
+
+dn: ou=<%=node[:openldap][:server][:user_group_tree]%>,<%=node[:openldap][:server][:suffix]%>
+ou: <%= node[:openldap][:server][:user_group_tree]%>
+objectClass: organizationalUnit
+objectClass: top
+
+dn: ou=<%=node[:openldap][:server][:policy_tree]%>,<%=node[:openldap][:server][:suffix]%>
+ou: <%=node[:openldap][:server][:policy_tree]%>
+objectClass: organizationalUnit
+objectClass: top
+
+<%node[:openldap][:server][:user_groups].each do |group|%>
+dn: cn=<%=group%>,ou=<%=node[:openldap][:server][:user_group_tree]%>,<%=node[:openldap][:server][:suffix]%>
+objectclass: groupOfNames
+cn: <%=group%>
+description: <%=group%>
+member: uid=invalid,ou=Users,<%=node[:openldap][:server][:suffix]%>
+
+<%end%>
+
+<% @environments.each do |group| %>
+dn: cn=<%=group%>,ou=<%=node[:openldap][:server][:user_group_tree]%>,<%=node[:openldap][:server][:suffix]%>
+objectclass: groupOfNames
+cn: <%=group%>
+description: <%=group%>
+member: uid=invalid,ou=Users,<%=node[:openldap][:server][:suffix]%>
+
+<%end%>
+
+# Entries for sudo
+dn: cn=sudoers,ou=Groups,<%=node[:openldap][:server][:suffix]%>
+objectclass: posixGroup
+cn: sudoers
+gidNumber: 10000
+description: Posix group with sudo capability for a server the user can access
+
+dn: cn=non-sudoers,ou=Groups,<%=node[:openldap][:server][:suffix]%>
+objectclass: posixGroup
+cn: non-sudoers
+gidNumber: 10001
+description: Posix group for users who do not have sudo priveliges
+
+# Define a Password Policy
+dn: cn=default,ou=<%=node[:openldap][:server][:policy_tree]%>,<%=node[:openldap][:server][:suffix]%>
+cn: default
+objectClass: pwdPolicy
+objectClass: pwdPolicyChecker
+objectClass: person
+objectClass: top
+pwdAllowUserChange: TRUE
+pwdAttribute: userPassword
+pwdExpireWarning: 3600
+pwdFailureCountInterval: 0
+pwdGraceAuthNLimit: 0
+pwdInHistory: 4
+pwdLockout: TRUE
+pwdLockoutDuration: 0
+pwdMaxAge: 2592000
+pwdMaxFailure: 5
+pwdMinAge: 3600
+pwdMinLength: 7
+pwdMustChange: TRUE
+pwdSafeModify: FALSE
+sn: dummy value
+pwdCheckModule: check_password.so
+pwdCheckQuality: 2
+
+<%end%>
+
+#Adding user
+#dn: uid=ldap1,ou=people,dc=$dc1,dc=$dc2
+#objectClass: inetOrgPerson
+#objectClass: posixAccount
+#objectClass: shadowAccount
+#uid: ldap1
+#sn: Asdasd
+#givenName: ldap1
+#cn: ldap1 Asdasd
+#displayName: ldap1 asdasd
+#uidNumber: 1002
+#gidNumber: 1000
+#userPassword: $hash_pw
+#gecos: ldap1 asdasd
+#loginShell: /bin/bash
+#homeDirectory: /home/ldap1
+#shadowExpire: -1
+#shadowFlag: 0
+#shadowWarning: 7
+#shadowMin: 8
+#shadowMax: 999999
+#shadowLastChange: 10877
+#mail: aw@$dc1.$dc2
+#postalCode: 31000
+#l: Mysity
+#o: $dc1
+#mobile: +33 (0)6 22 22 22 22 22
+#homePhone: +33 (0)5 33 22 33 22
+#title: System Administrator
+#postalAddress:
+#initials: LP
+

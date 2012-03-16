@@ -1,0 +1,8 @@
+= DESCRIPTION:
+Sets up and configures nginx server
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

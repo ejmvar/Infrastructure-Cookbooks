@@ -1,0 +1,31 @@
+;
+; BIND data file for <%=@domain%> Created by Chef
+;
+$TTL	86400	; TTL, seconds
+@	IN	SOA	<%=@nameservers.join(' ')%> ( 
+      <%=Time.now.strftime("%Y%m%d%H%M")%>        ; Serial, seconds
+			7200		; Refresh, seconds
+			120		; Retry, seconds
+			2419200		; Expire, seconds
+			604800		; Minimum, seconds
+)
+;
+<%@nameservers.each do |nameserver|%>
+@	IN	NS	<%=nameserver%>
+<%end%>
+;
+<%node[:dhcpd][:zones].each do |zone, machines|%>
+  <%machines.each do |name, config|%>
+<%=name%>   IN  A     <%=config[:ip_address]%>
+    <%if config[:cnames]%>
+      <%config[:cnames].split(' ').each do |cname|%>
+<%=cname%>  IN  CNAME <%=name%>
+      <%end%>
+    <%end%>
+  <%end%>
+;
+<%end%>
+<%if @nameservers.include?("dummy.#{node[:dhcpd][:domain]}.")%>
+dummy     IN  A       0.0.0.0
+;
+<%end%>

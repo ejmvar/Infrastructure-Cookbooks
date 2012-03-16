@@ -1,0 +1,10 @@
+= DESCRIPTION:
+
+Sets up a local user to be used if alternate access is malfunctioning
+
+= REQUIREMENTS:
+
+= ATTRIBUTES:
+
+= USAGE:
+

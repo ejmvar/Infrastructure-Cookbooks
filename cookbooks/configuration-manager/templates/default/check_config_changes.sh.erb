@@ -1,0 +1,20 @@
+#!/bin/sh
+config_dir='<%=node[:configuration_manager][:config_dir]%>'
+repo_dir='/home/<%=node[:configuration_manager][:user]%>/device_configs'
+executable='/home/<%=node[:configuration_manager][:user]%>/redmine_alert.rb'
+devices=`ls $config_dir`
+for a in $devices
+do
+  latest_config=`ls -rt $config_dir/$a | tail -1`
+  rm -f $repo_dir/$a || echo "no config saved for $a"
+  cp $config_dir/$a/$latest_config $repo_dir/$a
+  sed -i -e 's/^ntp clock-period .*$//g' $repo_dir/$a
+done
+
+cd $repo_dir
+status=`git status`
+diff=`git diff`
+case "$status" in
+  *"nothing to commit"*) echo "no changes to report" ;;
+  *) <%=node[:languages][:ruby][:ruby_bin]%> $executable 'CONFIG CHANGED' "$diff" && git add . && git commit -a -m "config change sent to redmine"
+esac

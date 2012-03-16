@@ -1,0 +1,86 @@
+Backup::Configuration::Storage::SCP.defaults do |server|
+  server.username = '<%=@backup[:deploy_user][:user]%>'
+  server.ip       = '<%=@backup[:ipaddress]%>'
+  server.port     = 22
+end
+
+<% node[:backup][:jobs].each do |name, config| %>
+  Backup::Model.new(:<%=name%>, '<%= node[:backup][:description] %>') do
+    <% if config[:mysql_databases] %>
+      <% config[:mysql_databases].each do |name, settings| %>
+        database MySQL do |database|
+          database.name               = '<%= name %>'
+          database.username           = '<%= settings[:username] %>'
+          database.password           = '<%= settings[:password] %>'
+          database.host               = '<%= settings[:host]%>'
+          database.port               = <%= settings[:port]%>
+          <%="database.socket             = '#{settings[:socket]}' " if settings[:socket]%>
+          database.additional_options = ['--single-transaction', '-c']
+        end
+      <% end %>
+    <% end %>
+
+    <% if config[:mongo_databases] %>
+      <% config[:mongo_databases].each do |name, settings|%>
+        database MongoDB do |database|
+          database.name             = '<%= name %>'
+          database.host             = '<%= settings[:host]%>'
+        end
+      <% end %>
+    <% end %>
+
+    <% if config[:archives] %>
+      <% config[:archives].each do |name, archive_paths| %>
+        archive :<%= name %> do |archive|
+          <% archive_paths.each do |path| %>
+            archive.add '<%= path %>'
+          <% end %>
+        end
+      <% end %>
+    <% end %>
+
+    <%if config[:mysql_databases] || config[:mongo_databases] || config[:archives] %>
+      compress_with Bzip2 do |compression|
+        compression.best = true
+        compression.fast = false
+      end
+
+      encrypt_with OpenSSL do |encryption|
+        encryption.password = '<%=@backup[:backup_server][:encryption_password]%>'
+        encryption.salt = true
+      end
+
+      store_with SCP do |server|
+        server.path     = '<%=@backup[:backup_server][:backup_dir]%>/<%=node[:fqdn]%>'
+        server.keep     = <%= config[:keep] %>
+      end
+
+      #sync_with RSync do |rsync|
+        #rsync.ip        = "<%=sync.ipaddress%>"
+        #rsync.port      = 22
+        #rsync.username  = "<%=sync.username%>"
+        #rsync.password  = "<%=sync.password%>"
+        #rsync.path      = "<%=sync.path%>"
+        #rsync.mirror    = true
+        #rsync.compress   = true
+      #end
+    <%end%>
+
+    <%if config.include?('sync_directories') && !config[:sync_directories].empty? %>
+      sync_with S3 do |s3|
+        s3.access_key_id     = "<%=node[:backup][:s3][:aws_access_key]%>"
+        s3.secret_access_key = "<%=node[:backup][:s3][:aws_secret_key]%>"
+        s3.bucket            = "<%=node[:fqdn]%>"
+        s3.path              = "<%=name%>"
+        s3.mirror            = true
+
+        s3.directories do |directory|
+          <%config[:sync_directories].each do |dir|%>
+            directory.add '<%=dir%>'
+          <%end%>
+        end
+      end
+    <%end%>
+
+  end
+<%end%>
