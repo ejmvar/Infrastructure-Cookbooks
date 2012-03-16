@@ -58,7 +58,7 @@ EOP
 chef-solo -c /etc/chef/solo.rb -j ~/chef.json -r http://s3.amazonaws.com/chef-solo/bootstrap-0.10.4.tar.gz
 
 cd ~
-su deploy -c "git clone -b master https://github.com:versapay/chef-repo"
+su deploy -c "git clone -b master https://github.com:versapay/Infrastructure-Cookbooks.git"
 
 echo " Setup knife. Accept all default values except chef repo path which should be /home/ubuntu/chef-repo and chef server url which should use https"
 
